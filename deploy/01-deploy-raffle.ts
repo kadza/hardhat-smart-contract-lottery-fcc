@@ -1,7 +1,7 @@
 import { ethers, network } from "hardhat"
 import { DeployFunction } from "hardhat-deploy/types"
 import { HardhatRuntimeEnvironment } from "hardhat/types"
-import { developmentChains, networkConfig } from "../helper-hardhat.config"
+import { developmentChains, networkConfig, VERIFICATION_BLOCK_CONFIRMATIONS } from "../helper-hardhat.config"
 
 const deployRaffle: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts } = hre
@@ -22,13 +22,24 @@ const deployRaffle: DeployFunction = async function (hre: HardhatRuntimeEnvironm
     vrfCoordinatorV2Address = usedNetworkConfig.vrfCoordinatorV2
   }
 
+  const waitBlockConfirmations = developmentChains.includes(network.name)
+  ? 1
+  : VERIFICATION_BLOCK_CONFIRMATIONS
+
   log("Deploying ...")
 
   await deploy("Raffle", {
     from: deployer,
-    args: [vrfCoordinatorV2Address, usedNetworkConfig.raffleEntranceFee, usedNetworkConfig.gasLane],
+    args: [
+      vrfCoordinatorV2Address,
+      subscriptionId,
+      networkConfig[chainId]["gasLane"],
+      networkConfig[chainId]["keepersUpdateInterval"],
+      networkConfig[chainId]["raffleEntranceFee"],
+      networkConfig[chainId]["callbackGasLimit"],
+    ],
     log: true,
-    waitConfirmations: 6,
+    waitConfirmations: waitBlockConfirmations,
   })
 }
 export default deployRaffle
